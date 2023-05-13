@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />  
+    <title>{{domTitle}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    {{#if productCSS}}
+    <link rel="stylesheet" type="text/css" href="/css/product.css" />
+    {{/if}}
+    {{#if formCSS}}
+    <link rel="stylesheet" type="text/css" href="/css/form.css" />
+    {{/if}}
+  </head>
+  <body>
+    <header class="main-header">
+      <nav class="main-header__nav">
+        <ul class="main-header__item-list">
+          <li class="main-header__item"><a class="{{#if productCSS}}active{{/if}}" href="/">Shop</a></li>
+          <li class="main-header__item">
+            <a href="/admin/add-product" class="{{#if formCSS}}active{{/if}}">Add Product</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+    {{{body}}}
+  </body>
+</html>
