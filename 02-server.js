@@ -6,6 +6,9 @@ const shopRoutes = require('./routes/shop')
 // const {engine} = require('express-handlebars') 
 
 
+// I will stick to the pug engine
+
+
 const app = express()
 // whatevername we use here will be used as the file extension for that engine file
 // no need to extend or what default layout will be used if we dont want to use the 
@@ -20,8 +23,8 @@ const app = express()
 //         ) // we need to add the engine like this into the express for using handlebars
 // app.set('view engine','handlebars')
 //we do not need to import to pub and avoid other stuff just simply do it
-// app.set('view engine','pug') // which engine to use for expressing dynamic data for dynamic rendering the html like react using like map
-app.set('view engine','ejs') // no need to import ejs engine also
+app.set('view engine','pug') // which engine to use for expressing dynamic data for dynamic rendering the html like react using like map
+// app.set('view engine','ejs') // no need to import ejs engine also
 app.set('views','./views') //where to find these templetate
 app.use(bodyParser.urlencoded({extended:false}))
 app.use(bodyParser.json())
@@ -49,3 +52,5 @@ res.status(404).render('404',{domTitle:'Page not Found'})
 app.listen(8080,"127.0.0.1",()=>{
     console.log('Listening!')
 })
+
+// I have to learn about the mixins concept of the pub

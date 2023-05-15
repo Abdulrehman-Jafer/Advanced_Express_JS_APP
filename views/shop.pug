@@ -4,7 +4,7 @@ block styles
         link(rel="stylesheet", href="css/product.css")
 block content 
         main
-            if hasProducts
+            if products.length > 0
                 div.grid
                     each product in products
                         article.card.product-item
