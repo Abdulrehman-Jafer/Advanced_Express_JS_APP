@@ -1,3 +1,3 @@
-const path = require('node:path')
+const path = require('path');
 
-module.exports = path.dirname(require.main.filename) //using require.main.filename we are getting the filename and using path.dirname() we can get the path of root directory
+module.exports = path.dirname(process.mainModule.filename);

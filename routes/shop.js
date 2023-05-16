@@ -1,21 +1,25 @@
-const path = require('node:path')
-const express = require('express')
-const {get_Products} = require('../controllers/products')
+const path = require('path');
 
-const rootDir = require('../util/path')
+const express = require('express');
 
-const router = express.Router()
+const shopController = require('../controllers/shop');
 
+const router = express.Router();
 
-router.get('/',get_Products)
-//    (req,res,next)=>{
-//     // res.send('<h1>Hello from Express</h1>') // Header will be set automatically by such as {'Content-Type','text/html'}
-//     console.log(products)
-//    // const absolutePath = path.join(rootDir,'views','shop.html') // __dirname is a global variable which hold the absolute path to the current directory and via join we can concate it to any folder
-//    // res.sendFile(absolutePath,(err)=>err && console.log(err)) // can't provide the relative path need absolute path
-//    res.render('shop',{products,domTitle:'My Shop',path:'/',hasProducts:products.length > 0,productCSS:true}) //for rendering templates also we dont need to specify paths as we have already done it in the main file and also don't need to define the extension for file it will know that we are using pug engine
-//    //injecting dynamic data into the template
-//    //we can use these values by using #{<keyname>}
-// })
+router.get('/', shopController.getIndex);
 
-module.exports = router
+router.get('/products', shopController.getProducts);
+
+router.get('/products/:productId', shopController.getProduct);
+
+router.get('/cart', shopController.getCart);
+
+router.post('/cart', shopController.postCart);
+
+router.post('/cart-delete-item', shopController.postCartDeleteProduct);
+
+router.get('/orders', shopController.getOrders);
+
+router.get('/checkout', shopController.getCheckout);
+
+module.exports = router;

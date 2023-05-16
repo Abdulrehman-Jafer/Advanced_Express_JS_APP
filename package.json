@@ -1,23 +1,23 @@
 {
-  "name": "node-js",
+  "name": "nodejs-complete-guide",
   "version": "1.0.0",
-  "description": "",
-  "main": "02-routes.js",
+  "description": "Complete Node.js Guide",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon 02-server.js"
+    "start": "nodemon app.js",
+    "start-server": "node app.js"
   },
-  "keywords": [],
-  "author": "",
+  "author": "Maximilian Schwarzmüller",
   "license": "ISC",
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "nodemon": "^1.18.3"
   },
   "dependencies": {
-    "body-parser": "^1.20.2",
-    "ejs": "^3.1.9",
-    "express": "^4.18.2",
-    "express-handlebars": "^7.0.7",
-    "pug": "^3.0.2"
+    "body-parser": "^1.18.3",
+    "ejs": "^2.6.1",
+    "express": "^4.16.3",
+    "express-handlebars": "^3.0.0",
+    "pug": "^2.0.3"
   }
 }

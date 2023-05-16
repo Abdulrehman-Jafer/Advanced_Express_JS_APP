@@ -1,37 +1,74 @@
-const rootDir = require("../util/path.js")
-const path = require("node:path")
-const fs = require("node:fs/promises")
+const fs = require('fs');
+const path = require('path');
 
+const Cart = require('./cart');
 
-const absolutePath = path.join(rootDir,"data","products.json")
+const p = path.join(
+  path.dirname(require.main.filename),
+  'data',
+  'products.json'
+);
 
-const getProductsFromFile = async (cb) => {
-    const fileContent = await fs.readFile(absolutePath)
-    .catch(err=>{
-        console.log("fetchAll:",err)
-        return cb([])
-    })
-    const products = JSON.parse(fileContent)
-    return cb(products);
-}
-
-class Product {
-    constructor(title){
-        this.title = title
+const getProductsFromFile = cb => {
+  fs.readFile(p, (err, fileContent) => {
+    if (err) {
+      cb([]);
+    } else {
+      cb(JSON.parse(fileContent));
     }
+  });
+};
 
-    async save(){
-            getProductsFromFile (async (products) => {
-            products.push(this) // this refers to the class
-            await fs.writeFile(absolutePath,JSON.stringify(products))
-            .catch(err => console.log("writeFileError:",err))
-        })
-    }
+module.exports = class Product {
+  constructor(id, title, imageUrl, description, price) {
+    this.id = id;
+    this.title = title;
+    this.imageUrl = imageUrl;
+    this.description = description;
+    this.price = price;
+  }
 
-    // here I will pass the cb to the fetchAll which will be called
-    static async fetchAll (cb){ //static mean we do not have to create a new instance it mean we call this method dirctly on the class.
-        getProductsFromFile(cb)
-    }
-}
+  save() {
+    getProductsFromFile(products => {
+      if (this.id) {
+        const existingProductIndex = products.findIndex(
+          prod => prod.id === this.id
+        );
+        const updatedProducts = [...products,products[existingProductIndex] = this];
+        fs.writeFile(p, JSON.stringify(updatedProducts), err => {
+          console.log(err);
+        });
+      } else {
+        this.id = Math.random().toString();
+        products.push(this);
+        fs.writeFile(p, JSON.stringify(products), err => {
+          console.log(err);
+        });
+      }
+    });
+  }
 
-exports.Product = Product
+  static deleteById(id) {
+    getProductsFromFile(products => {
+      const product = products.find(prod => prod.id === id);
+      if(!product) return alert("Cannot Delete Id-Do-not-Exist")
+      const updatedProducts = products.filter(prod => prod.id !== id);
+      fs.writeFile(p, JSON.stringify(updatedProducts), err => {
+        if (!err) {
+          Cart.deleteProduct(id, product.price);
+        }
+      });
+    });
+  }
+
+  static fetchAll(cb) {
+    getProductsFromFile(cb);
+  }
+
+  static findById(id, cb) {
+    getProductsFromFile(products => {
+      const product = products.find(p => p.id === id);
+      cb(product);
+    });
+  }
+};
