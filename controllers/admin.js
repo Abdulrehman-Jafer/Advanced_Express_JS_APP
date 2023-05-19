@@ -9,22 +9,25 @@ exports.getAddProduct = (req, res, next) => {
 };
 
 exports.postAddProduct = (req, res, next) => {
-  const {title,image_Url,price,description} = req.body
-  // return Product.create({
-  //   title,
-  //   image_Url,
-  //   price,
-  //   description,
-  //   user_id: req.user.id
-  // })
-  req.user.createProduct({ // this method is automatically created for us for one-to-many relation 
-    title,
-    image_Url,
-    price,
-    description,
-  })
-  .then(()=>res.redirect("/admin/products"))
-  .catch(err => console.error(err))
+  const title = req.body.title;
+  const imageUrl = req.body.imageUrl;
+  const price = req.body.price;
+  const description = req.body.description;
+  req.user
+    .createProduct({
+      title: title,
+      price: price,
+      imageUrl: imageUrl,
+      description: description
+    })
+    .then(result => {
+      // console.log(result);
+      console.log('Created Product');
+      res.redirect('/admin/products');
+    })
+    .catch(err => {
+      console.log(err);
+    });
 };
 
 exports.getEditProduct = (req, res, next) => {
@@ -33,40 +36,64 @@ exports.getEditProduct = (req, res, next) => {
     return res.redirect('/');
   }
   const prodId = req.params.productId;
-  Product.findOne({where:{id:prodId}})
-  .then(row=>{
-     res.render('admin/edit-product', {
-      pageTitle: 'Edit Product',
-      path: '/admin/edit-product',
-      editing: editMode,
-      product: row
-  })})
-  .catch(err => console.error(err))
-}
+  req.user
+    .getProducts({ where: { id: prodId } })
+    .then(products => {
+      const product = products[0];
+      if (!product) {
+        return res.redirect('/');
+      }
+      res.render('admin/edit-product', {
+        pageTitle: 'Edit Product',
+        path: '/admin/edit-product',
+        editing: editMode,
+        product: product
+      });
+    })
+    .catch(err => console.log(err));
+};
 
 exports.postEditProduct = (req, res, next) => {
-  const {title,image_Url,price,description,productId} = req.body
-  Product.update({title,image_Url,price,description},{where:{id:productId}})
-  .then(()=>res.redirect('/admin/products'))
-  .catch(err=>console.error(err));
+  const prodId = req.body.productId;
+  const updatedTitle = req.body.title;
+  const updatedPrice = req.body.price;
+  const updatedImageUrl = req.body.imageUrl;
+  const updatedDesc = req.body.description;
+  Product.findOne({where:{id:prodId}})
+    .then(product => {
+      product.title = updatedTitle;
+      product.price = updatedPrice;
+      product.description = updatedDesc;
+      product.imageUrl = updatedImageUrl;
+      return product.save();
+    })
+    .then(() => {
+      res.redirect('/admin/products');
+    })
+    .catch(err => console.log(err));
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.findAll({})
-  .then(rows => 
-  res.render('admin/products', {
-    prods: rows,
-    pageTitle: 'Admin Products',
-    path: '/admin/products'
-  }))
-  .catch(err => console.error(err))
+  req.user
+    .getProducts()
+    .then(products => {
+      res.render('admin/products', {
+        prods: products,
+        pageTitle: 'Admin Products',
+        path: '/admin/products'
+      });
+    })
+    .catch(err => console.log(err));
 };
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.destroy({where:{
-    id:prodId
-  }})
-  .then(()=>res.redirect("/admin/products"))
-  .catch(err=> console.error(err))
+  Product.findOne({where:{id:prodId}})
+    .then(product => {
+      return product.destroy();
+    })
+    .then(() => {
+      res.redirect('/admin/products');
+    })
+    .catch(err => console.log(err));
 };
