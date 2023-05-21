@@ -1,14 +1,9 @@
 const path = require('path');
-
 const express = require('express');
 const bodyParser = require('body-parser');
-
 const errorController = require('./controllers/error');
 const sequelize = require('./util/database');
-const Product = require('./models/product');
-const User = require('./models/user');
-const Cart = require('./models/cart');
-const CartItem = require('./models/cart-item');
+const {Cart,CartItem,Order,OrderItem,Product,User} = require("./models/index")
 
 const app = express();
 
@@ -24,14 +19,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use((req, res, next) => {
   User.findOne({where:{id:1}})
     .then(user => {
-      req.user = user;
-      next();
+        req.user = user;
+        user.createCart()
+        next()
     })
     .catch(err => console.log(err));
 });
 
 app.use('/admin', adminRoutes);
-app.use(shopRoutes);
+app.use('/',shopRoutes);
 
 app.use(errorController.get404);
 
@@ -41,24 +37,11 @@ User.hasOne(Cart);
 Cart.belongsTo(User);
 Cart.belongsToMany(Product, { through: CartItem });
 Product.belongsToMany(Cart, { through: CartItem });
+Order.belongsTo(User);
+User.hasMany(Order);
+Order.belongsToMany(Product, { through: OrderItem });
 
 sequelize
   .sync()
-  .then(() => {
-    return User.findOne({where:{id:1}});
-  })
-  .then(user => {
-    if (!user) {
-      return User.create({ name: 'Max', email: 'test@test.com' });
-    }
-    return user;
-  })
-  .then(user => {
-    return user.createCart();
-  })
-  .then(() => {
-    app.listen(3000);
-  })
-  .catch(err => {
-    console.log(err);
-  });
+  .then(() => app.listen(3000)).then(()=>console.log("Listening!"))
+  .catch(err => console.log(err))
