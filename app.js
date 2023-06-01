@@ -7,7 +7,8 @@ const mongoose = require("mongoose")
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const {client} = require("./util/database")
-const User = require("./models/user")
+const User = require("./models/user");
+const { ObjectId } = require('mongodb');
 
 const app = express();
 dotenv.config()
@@ -23,7 +24,7 @@ app.use((req,res,next) => {
     return (next())
   } else {
     const userId = "647215d1c1681c5e88e7fc2d";
-    const user = User.findOne(userId).then((user)=>{
+    const user = User.findOne({_id: new ObjectId(userId)}).then((user)=>{
       if(user){
         req.user = user;
         next()
@@ -42,12 +43,11 @@ app.use('/',shopRoutes);
 
 app.use(errorController.get404);
 
-client().then(()=> {
-  app.listen(process.env.PORT)
-})
-.then(()=>console.log("Listening"))
-.catch(err => {
-  console.log(err)
-})
+mongoose.connect(process.env.MONGO_URI)
+.then(()=>{
+  app.listen(3000,()=>{
+    console.log("Listening")
+  })
+}).catch(err => console.log(err))
   
 

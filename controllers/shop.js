@@ -1,5 +1,7 @@
+const { ObjectId } = require('mongodb');
 const Product = require('../models/product');
 const User = require('../models/user');
+const Order = require('../models/order');
 
 exports.getProducts = (req, res, next) => {
   Product.fetchAll()
@@ -44,11 +46,12 @@ exports.getIndex = (req, res, next) => {
 
 exports.getCart = (req, res, next) => {
    User.getCart(req.user)
-   .then((cart)=>{
+   .then((user)=>{
+     console.log(user)
      return res.render('shop/cart', {
       path: '/cart',
       pageTitle: 'Your Cart',
-      products: cart
+      products: user.cart
     });
    })
    .catch(err => console.log(err))
@@ -68,15 +71,7 @@ exports.postCart = (req, res, next) => {
 
 exports.postCartDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  req.user
-    .getCart()
-    .then(cart => {
-      return cart.getProducts({ where: { id: prodId } });
-    })
-    .then(products => {
-      const product = products[0];
-      return product.cartItem.destroy();
-    })
+    User.deleteOneFromCart(req.user,prodId)
     .then(()=> {
       res.redirect('/cart');
     })
@@ -84,44 +79,25 @@ exports.postCartDeleteProduct = (req, res, next) => {
 };
 
 exports.postOrder = (req, res, next) => {
-  let fetchedCart;
-  req.user
-    .getCart()
-    .then(cart => {
-      fetchedCart = cart;
-      return cart.getProducts();
+  User.getCart(req.user).then((user)=>{
+    const products = user.cart.map(p => ({quantity: p.quantity, product: {...p.productId}}))
+    const order = new Order({
+      products: products,
+      user : { name: user.name, userId: new ObjectId(user._id)}
     })
-    .then(products => {
-      return req.user
-        .createOrder()
-        .then(order => {
-          return order.addProducts(
-            products.map(product => {
-              product.orderItem = { quantity: product.cartItem.quantity };
-              return product;
-            })
-          );
-        })
-        .catch(err => console.log(err));
-    })
-    .then(() => {
-      return fetchedCart.setProducts(null);
-    })
-    .then(() => {
-      res.redirect('/orders');
-    })
-    .catch(err => console.log(err));
+    order.save().then(()=>User.updateOne( {_id: new ObjectId(user._id)}, {$set:{ cart: []}}))
+    .then(()=>res.redirect('/orders'))
+  })
+  .catch(err => console.log(err))
 };
 
 exports.getOrders = (req, res, next) => {
-  req.user
-    .getOrders({include: ['products']})
-    .then(orders => {
-      res.render('shop/orders', {
-        path: '/orders',
-        pageTitle: 'Your Orders',
-        orders: orders
-      });
-    })
-    .catch(err => console.log(err));
+  Order.find({"user.userId": new ObjectId(req.user._id)})
+  .then((orders) => {
+    res.render('shop/orders', {
+      path: '/orders',
+      pageTitle: 'Your Orders',
+      orders: orders
+  })})
+  .catch(err => console.log(err))
 };
