@@ -1,24 +1,25 @@
-const { Schema, model,  } = require("mongoose")
+const mongoose = require('mongoose');
 
-const schema = new Schema({
-    products : [{
-        type: Schema.Types.Mixed,
-        required: true
-    }],
-    user : {
-        name : {
-            type : Schema.Types.String,
-            required:true
-        },
-        userId: {
-            type : Schema.Types.ObjectId,
-            ref : "User",
-            required:true
-        }
+const Schema = mongoose.Schema;
+
+const orderSchema = new Schema({
+  products: [
+    {
+      product: { type: Object, required: true },
+      quantity: { type: Number, required: true }
     }
-})
+  ],
+  user: {
+    name: {
+      type: String,
+      required: true
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: 'User'
+    }
+  }
+});
 
-
-const Order = model("Order",schema)
-
-module.exports = Order;
+module.exports = mongoose.model('Order', orderSchema);
