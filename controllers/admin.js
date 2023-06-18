@@ -1,3 +1,4 @@
+
 const Product = require('../models/product');
 
 exports.getAddProduct = (req, res, next) => {
@@ -39,7 +40,7 @@ exports.getEditProduct = (req, res, next) => {
     return res.redirect('/');
   }
   const prodId = req.params.productId;
-  Product.findById(prodId)
+  Product.findOne({_id : prodId, userId: req.user._id})
     .then(product => {
       if (!product) {
         return res.redirect('/');
@@ -64,23 +65,25 @@ exports.postEditProduct = (req, res, next) => {
 
   Product.findById(prodId)
     .then(product => {
-      product.title = updatedTitle;
-      product.price = updatedPrice;
-      product.description = updatedDesc;
-      product.imageUrl = updatedImageUrl;
-      return product.save();
-    })
-    .then(result => {
-      console.log('UPDATED PRODUCT!');
-      res.redirect('/admin/products');
+      if(product.userId.equals(req.user._id)){
+        product.title = updatedTitle;
+        product.price = updatedPrice;
+        product.description = updatedDesc;
+        product.imageUrl = updatedImageUrl;
+        return product.save()
+        .then(() => {
+          console.log('UPDATED PRODUCT!');
+          res.redirect('/admin/products');
+        })
+      } else {
+        return res.redirect("/")
+      }
     })
     .catch(err => console.log(err));
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.find()
-    // .select('title price -_id')
-    // .populate('userId', 'name')
+  Product.find({userId: req.user._id })
     .then(products => {
       console.log(products);
       res.render('admin/products', {
@@ -93,12 +96,18 @@ exports.getProducts = (req, res, next) => {
     .catch(err => console.log(err));
 };
 
-exports.postDeleteProduct = (req, res, next) => {
+exports.postDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
-  Product.findByIdAndRemove(prodId)
-    .then(() => {
-      console.log('DESTROYED PRODUCT');
-      res.redirect('/admin/products');
-    })
-    .catch(err => console.log(err));
+  const product = await Product.findById(prodId)
+  if(product.userId.equals(req.user._id)){
+    Product.findByIdAndRemove(prodId)
+      .then(() => {
+        console.log('DESTROYED PRODUCT');
+        res.redirect('/admin/products');
+      })
+      .catch(err => console.log(err));
+  } else {
+    console.log("unauthorized")
+    res.redirect("/")
+  }
 };
