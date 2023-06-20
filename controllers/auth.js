@@ -3,8 +3,7 @@ const bcrypt = require("bcryptjs")
 const nodemailer = require("nodemailer")
 const sgTransport = require("nodemailer-sendgrid-transport")
 const crypto = require("crypto");
-const { ObjectId } = require('bson');
-
+const { validationResult } = require("express-validator")
 
 const MAILFROM = "abdulrehmanjaferworks01233@gmail.com" // Sender setted in send grid
 
@@ -14,7 +13,9 @@ exports.getLogin = (req, res, next) => {
     path: '/login',
     pageTitle: 'Login',
     isAuthenticated: false,
-    errorMessage : req.flash("error")[0]
+    errorMessage : req.flash("error")[0],
+    oldInput: { email:"",password:"",},
+    validationErrors: []
   });
 };
 
@@ -23,16 +24,29 @@ exports.getSignup = (req, res, next) => {
     path: '/signup',
     pageTitle: 'Signup',
     isAuthenticated: false,
-    errorMessage: req.flash("error")[0]
+    errorMessage: req.flash("error")[0],
+    oldInput: { email:"",password:"",confirmPassword:"" },
+    validationErrors: []
   });
 };
 
 exports.postLogin = (req, res, next) => {
   const {email,password} = req.body
+  if(!validationResult(req).isEmpty()){
+    req.flash("error",validationResult(req).array()[0].msg)
+    return res.status(422).render('auth/login', {
+      path: '/login',
+      pageTitle: 'Log In',
+      isAuthenticated: false,
+      errorMessage: req.flash("error")[0],
+      oldInput: { email,password },
+      validationErrors: validationResult(req).array()
+    });
+  }
   User.findOne({email})
     .then(user => {
       if(!user) {
-        req.flash("error","Invalid email or password")
+        req.flash("error","Incorrect email or password")
         return res.redirect("/login")
       }
       bcrypt.compare(password,user.password).then((matched)=>{
@@ -45,8 +59,8 @@ exports.postLogin = (req, res, next) => {
             return res.redirect('/')
           });
         } else {
-          req.flash("error","Invalid email or password")
-          return res.redirect("/login")
+          req.flash("error","Incorrect email or password")
+          return res.status(422).redirect("/login")
         }
       })
     })
@@ -57,46 +71,55 @@ exports.postLogin = (req, res, next) => {
 };
 
 exports.postSignup = (req, res, next) => {
-  const { email,password,confirmPassword } = req.body
+  const { email,password,confirmPassword } = req.body //Strong@1
   //VaLIDATION wIll Be Done but not right now;
-  User.findOne({email}).then((userDoc)=>{
-    if(userDoc) {
-      req.flash("error","User already exists")
-      return res.redirect("/signup")
-    }
-    else {
-      bcrypt.hash(password,12)
-      .then( hashedPassword => {
-        const user = new User({
-          email, 
-          password: hashedPassword
-        })
-        return user.save();
+  if(!validationResult(req).isEmpty()){
+    req.flash("error",validationResult(req).array()[0].msg)
+    return res.status(422).render('auth/signup', {
+      path: '/signup',
+      pageTitle: 'Signup',
+      isAuthenticated: false,
+      errorMessage: req.flash("error")[0],
+      oldInput: { email,password,confirmPassword },
+      validationErrors: validationResult(req).array()
+    });
+  }
+  try {
+    bcrypt.hash(password,12)
+    .then( hashedPassword => {
+      const user = new User({
+        email, 
+        password: hashedPassword
       })
-      .then(()=> {
-        // Can redirect without awaiting the mail delivery
-        res.redirect("/login")
-        // Mail will be sent
-        nodemailer.createTransport(sgTransport({
-          auth:{
-            api_key: "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"
+      return user.save();
+    })
+    .then(()=> {
+      // Can redirect without awaiting the mail delivery
+      res.redirect("/login")
+      // Mail will be sent
+      nodemailer.createTransport(sgTransport({
+        auth:{
+          api_key: "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"
+        }
+      })).sendMail({
+          to:email,
+          from:MAILFROM,
+          subject:"Sign Up Status",
+          text:"Hi there!",
+          html:"<h1>Sign Up Successful</h1>"
+        },(err,res) => {
+          if(err){
+            console.log(err,"MAIL ERROR")
           }
-        })).sendMail({
-            to:email,
-            from:MAILFROM,
-            subject:"Sign Up Status",
-            text:"Hi there!",
-            html:"<h1>Sign Up Successful</h1>"
-          },(err,res) => {
-            if(err){
-              console.log(err,"MAIL ERROR")
-            }
-            console.log(res,"Mail Sent Successful")
-          })
-      })
-  }})
-    .catch(err => console.log(err))
-};
+          console.log(res,"Mail Sent Successful")
+        })
+    })
+  } catch (error) {
+    console.log(error)
+    req.flash("error",error.msg)
+    return res.redirect("/signup")
+  }
+  };
 
 exports.postLogout = (req, res, next) => {
   req.session.destroy(err => {
