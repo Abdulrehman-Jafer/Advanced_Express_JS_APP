@@ -44,7 +44,9 @@ app.use(
 app.use(csrfProtection) // for any non get request this middleware will look for a token in the form so this way
 // we can avoid cross site request forgery and only the form submitted from our view e.g the POST request will
 // be validated
+
 app.use(flash())
+
 app.use((req, res, next) => {
   if (!req.session.user) {
     return next();
@@ -66,7 +68,12 @@ app.use('/admin', isAuthenticatedMiddleware ,adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
 
+app.use("/500",errorController.get500)
 app.use(errorController.get404);
+app.use((error,req,res,next) => {
+  res.redirect("/500")
+})
+
 
 mongoose
   .connect(MONGODB_URI).then(()=>{
