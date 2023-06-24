@@ -21,4 +21,6 @@ router.post('/create-order', isAuthenticatedMiddleware, shopController.postOrder
 
 router.get('/orders', isAuthenticatedMiddleware, shopController.getOrders);
 
+router.get('/orders/:orderId',isAuthenticatedMiddleware,shopController.getInvoice)
+
 module.exports = router;

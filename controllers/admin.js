@@ -1,5 +1,16 @@
 
 const Product = require('../models/product');
+const fs = require("fs")
+const path = require("path")
+
+const deleteFile = (filePath) => {
+  const absolutePath = path.join(__dirname , "../" , filePath) 
+  fs.unlink(absolutePath,(err)=>{
+    if(err){
+      return new Error("Error while Deleting",err)
+    }
+  })
+}
 
 exports.getAddProduct = (req, res, next) => {
   res.render('admin/edit-product', {
@@ -12,9 +23,15 @@ exports.getAddProduct = (req, res, next) => {
 
 exports.postAddProduct = (req, res, next) => {
   const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
+  const image = req.file;
   const price = req.body.price;
   const description = req.body.description;
+  if(!image){
+    console.log({file:req.file})
+    req.flash("error","Invalid Image format")
+    return res.status(422).redirect("/admin/add-product")
+  }
+  const imageUrl = "/" + image.path
   const product = new Product({
     title: title,
     price: price,
@@ -24,8 +41,7 @@ exports.postAddProduct = (req, res, next) => {
   });
   product
     .save()
-    .then(result => {
-      // console.log(result);
+    .then(() => {
       console.log('Created Product');
       res.redirect('/admin/products');
     })
@@ -64,7 +80,7 @@ exports.postEditProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const updatedTitle = req.body.title;
   const updatedPrice = req.body.price;
-  const updatedImageUrl = req.body.imageUrl;
+  const updatedImage = req.file;
   const updatedDesc = req.body.description;
 
   Product.findById(prodId)
@@ -73,7 +89,10 @@ exports.postEditProduct = (req, res, next) => {
         product.title = updatedTitle;
         product.price = updatedPrice;
         product.description = updatedDesc;
-        product.imageUrl = updatedImageUrl;
+        if(updatedImage){
+          deleteFile(product.imageUrl)
+          product.imageUrl = "/" + updatedImage.path;
+        }
         return product.save()
         .then(() => {
           console.log('UPDATED PRODUCT!');
@@ -112,7 +131,8 @@ exports.postDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
   const product = await Product.findById(prodId)
   if(product.userId.equals(req.user._id)){
-    Product.findByIdAndRemove(prodId)
+     deleteFile(product.imageUrl)
+     Product.deleteOne({_id: product._id})
       .then(() => {
         console.log('DESTROYED PRODUCT');
         res.redirect('/admin/products');
