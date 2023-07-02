@@ -107,3 +107,5 @@ mongoose
   .catch(err => {
     console.log(err); 
   });
+
+  /// Need to add stripe

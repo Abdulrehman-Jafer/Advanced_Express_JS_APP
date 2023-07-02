@@ -28,8 +28,9 @@
                             <% } %>
                         </div>
                     </article>
-                <% } %>
-            </div>
+                    <% } %>
+                </div>
+                <%- include('../includes/pagination.ejs', {currentPage,nextPage,prevPage,hasNextPage,hasPrevPage,lastPage}) %>
         <% } else { %>
             <h1>No Products Found!</h1>
         <% } %>

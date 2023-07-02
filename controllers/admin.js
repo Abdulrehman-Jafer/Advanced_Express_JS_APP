@@ -110,37 +110,48 @@ exports.postEditProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.find({userId: req.user._id })
+  const products_per_page = 2;
+  const page = +req.query.page || 1
+  let totalProducts;
+  Product.find({userId: req.user._id }).countDocuments((err,count) => {
+    totalProducts = count;
+  }).then(()=>{
+   return Product.find({userId: req.user._id }).skip((page - 1) * products_per_page).limit(products_per_page)
+  })
     .then(products => {
-      console.log(products);
       res.render('admin/products', {
         prods: products,
         pageTitle: 'Admin Products',
         path: '/admin/products',
-        isAuthenticated: req.session.isLoggedIn
+        isAuthenticated: req.session.isLoggedIn,
+        hasNextPage : page * products_per_page < totalProducts,
+        hasPrevPage: page > 1,
+        nextPage :page + 1,
+        prevPage : page - 1,
+        currentPage: page,
+        lastPage : Math.ceil(totalProducts/products_per_page)
       });
     })
-      .catch(err => {
+    .catch(err => {
       const error = new Error(err)
       error.httpStatusCode = 500
       next(error)
     });
 };
 
-exports.postDeleteProduct = async (req, res, next) => {
-  const prodId = req.body.productId;
+exports.deleteProduct = async (req, res, next) => {
+  const prodId = req.params.productId;
+  console.log(prodId)
   const product = await Product.findById(prodId)
   if(product.userId.equals(req.user._id)){
      deleteFile(product.imageUrl)
      Product.deleteOne({_id: product._id})
       .then(() => {
-        console.log('DESTROYED PRODUCT');
-        res.redirect('/admin/products');
+       res.status(200).json({message:"Successful"})
       })
       .catch(err => {
-      const error = new Error(err)
-      error.httpStatusCode = 500
-      next(error)
+        console.log(err)
+        res.status(500).json({error: "Could not delete the product"})
     });
   } else {
     console.log("unauthorized")
